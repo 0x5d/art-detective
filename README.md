@@ -46,3 +46,7 @@ Because Artsy's is a Hypermedia API, you'll see some fields are URLs pointing to
 ```
 
 art-detective first gets the object for Andy Warhol, and then sends a request to the URL present in the specified field and prints the response.
+
+## TODO
+- Handle errors caused by non-URL fields.
+- Add tests.

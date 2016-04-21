@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -46,36 +47,42 @@ func main() {
 		os.Exit(1)
 	}
 
-	msg := "Investigating subject \"" + *subject + "\""
-	if len(*id) != 0 {
-		msg += " with id \"" + *id + "\""
+	err := investigate(*subject, *id, *field)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func investigate(subject, id, field string) error {
+	msg := "Investigating subject \"" + subject + "\""
+	if len(id) != 0 {
+		msg += " with id \"" + id + "\""
 	}
 	msg += "."
 	fmt.Println(msg)
 	clientID := os.Getenv("ARTSY_CLIENT_ID")
 	clientSecret := os.Getenv("ARTSY_CLIENT_SECRET")
 	if len(clientID) == 0 || len(clientSecret) == 0 {
-		fmt.Println("Please set the ARTSY_CLIENT_ID and ARTSY_CLIENT_SECRET environment variables.")
-		os.Exit(1)
+		return errors.New("Please set the ARTSY_CLIENT_ID and ARTSY_CLIENT_SECRET environment variables.")
 	}
 	accessToken, _ := artsy.GetAccessToken(clientID, clientSecret)
 
-	res, _ := artsy.Get(accessToken, *subject, *id)
+	res, _ := artsy.Get(accessToken, subject, id)
 
-	if len(*field) != 0 {
+	if len(field) != 0 {
 		var err error
-		res, err = getField(res, strings.Split(*field, "."), accessToken)
+		res, err = getField(res, strings.Split(field, "."), accessToken)
 		if err != nil {
-			fmt.Println("Error: " + err.Error())
-			os.Exit(1)
+			return err
 		}
 	}
 	jsonRes, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
-		os.Exit(1)
+		return err
 	}
 	fmt.Println(string(jsonRes))
+	return nil
 }
 
 func getField(m map[string]interface{}, fieldPath []string, token string) (map[string]interface{}, error) {
