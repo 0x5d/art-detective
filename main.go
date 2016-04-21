@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -31,8 +30,14 @@ func main() {
 		"",
 		"A URL field in the body response that art-detective should follow. If not set, the initial raw response will be printed.",
 	)
+	help := flag.Bool("h", false, "Print the usage")
 	flag.Usage = printUsage
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	// Validate subject.
 	if !supportedSubjects.Contains(*subject) {
@@ -46,8 +51,14 @@ func main() {
 		msg += " with id \"" + *id + "\""
 	}
 	msg += "."
-	log.Println(msg)
-	accessToken, _ := artsy.GetAccessToken(os.Getenv("ARTSY_CLIENT_ID"), os.Getenv("ARTSY_CLIENT_SECRET"))
+	fmt.Println(msg)
+	clientID := os.Getenv("ARTSY_CLIENT_ID")
+	clientSecret := os.Getenv("ARTSY_CLIENT_SECRET")
+	if len(clientID) == 0 || len(clientSecret) == 0 {
+		fmt.Println("Please set the ARTSY_CLIENT_ID and ARTSY_CLIENT_SECRET environment variables.")
+		os.Exit(1)
+	}
+	accessToken, _ := artsy.GetAccessToken(clientID, clientSecret)
 
 	res, _ := artsy.Get(accessToken, *subject, *id)
 
@@ -77,7 +88,7 @@ func getField(m map[string]interface{}, fieldPath []string, token string) (map[s
 func printUsage() {
 	msg := `art-detective
 
-An artsy API client that follows links in responses.
+An Artsy API client that follows links in responses.
 Specify an endpoint and an optional ID for a specific resource, and art-detective will print the response.
 Additionally, you may specify the path to an url field and art-detective will retrieve it too.
 
